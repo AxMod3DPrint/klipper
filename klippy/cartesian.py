@@ -25,6 +25,7 @@ class CartKinematics:
         ffi_main, ffi_lib = chelper.get_ffi()
         self.cmove = ffi_main.gc(ffi_lib.move_alloc(), ffi_lib.free)
         self.move_fill = ffi_lib.move_fill
+        self.move_set_accel_order = ffi_lib.move_set_accel_order
         for a, s in zip('xyz', self.steppers):
             s.setup_cartesian_itersolve(a)
         # Setup stepper max halt velocity
@@ -48,6 +49,8 @@ class CartKinematics:
             printer.lookup_object('gcode').register_command(
                 'SET_DUAL_CARRIAGE', self.cmd_SET_DUAL_CARRIAGE,
                 desc=self.cmd_SET_DUAL_CARRIAGE_help)
+    def setup_accel_order(self, accel_order):
+        self.move_set_accel_order(self.cmove, accel_order)
     def get_steppers(self, flags=""):
         if flags == "Z":
             return [self.steppers[2]]

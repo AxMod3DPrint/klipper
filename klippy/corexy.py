@@ -30,6 +30,7 @@ class CoreXYKinematics:
         ffi_main, ffi_lib = chelper.get_ffi()
         self.cmove = ffi_main.gc(ffi_lib.move_alloc(), ffi_lib.free)
         self.move_fill = ffi_lib.move_fill
+        self.move_set_accel_order = ffi_lib.move_set_accel_order
         self.steppers[0].setup_itersolve(ffi_main.gc(
             ffi_lib.corexy_stepper_alloc('+'), ffi_lib.free))
         self.steppers[1].setup_itersolve(ffi_main.gc(
@@ -42,6 +43,8 @@ class CoreXYKinematics:
         self.steppers[1].set_max_jerk(max_xy_halt_velocity, max_accel)
         self.steppers[2].set_max_jerk(
             min(max_halt_velocity, self.max_z_velocity), self.max_z_accel)
+    def setup_accel_order(self, accel_order):
+        self.move_set_accel_order(self.cmove, accel_order)
     def get_steppers(self, flags=""):
         if flags == "Z":
             return [self.steppers[2]]

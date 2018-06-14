@@ -60,6 +60,7 @@ class DeltaKinematics:
         ffi_main, ffi_lib = chelper.get_ffi()
         self.cmove = ffi_main.gc(ffi_lib.move_alloc(), ffi_lib.free)
         self.move_fill = ffi_lib.move_fill
+        self.move_set_accel_order = ffi_lib.move_set_accel_order
         for s, a, t in zip(self.steppers, self.arm2, self.towers):
             sk = ffi_main.gc(ffi_lib.delta_stepper_alloc(a, t[0], t[1]),
                              ffi_lib.free)
@@ -81,6 +82,8 @@ class DeltaKinematics:
             % (math.sqrt(self.max_xy2), math.sqrt(self.slow_xy2),
                math.sqrt(self.very_slow_xy2)))
         self.set_position([0., 0., 0.], ())
+    def setup_accel_order(self, accel_order):
+        self.move_set_accel_order(self.cmove, accel_order)
     def get_steppers(self, flags=""):
         return list(self.steppers)
     def _cartesian_to_actuator(self, coord):

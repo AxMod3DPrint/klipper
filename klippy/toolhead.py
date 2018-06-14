@@ -234,6 +234,9 @@ class ToolHead:
                     'delta': delta.DeltaKinematics}
         self.kin = config.getchoice('kinematics', kintypes)(
             self, printer, config)
+        self.accel_order = config.getchoice(
+            'acceleration_order', { "2": 2, "4": 4, "6": 6 }, "2")
+        self.kin.setup_accel_order(self.accel_order)
         # SET_VELOCITY_LIMIT command
         gcode = printer.lookup_object('gcode')
         gcode.register_command('SET_VELOCITY_LIMIT', self.cmd_SET_VELOCITY_LIMIT,
@@ -371,6 +374,7 @@ class ToolHead:
         self.extruder.set_active(last_move_time, False)
         extrude_pos = extruder.set_active(last_move_time, True)
         self.extruder = extruder
+        self.extruder.setup_accel_order(self.accel_order)
         self.move_queue.set_extruder(extruder)
         self.commanded_pos[3] = extrude_pos
     def get_extruder(self):
@@ -425,16 +429,20 @@ class ToolHead:
             minval=0., maxval=self.config_junction_deviation)
         self.requested_accel_to_decel = gcode.get_float(
             'ACCEL_TO_DECEL', params, self.requested_accel_to_decel, above=0.)
+        accel_order = gcode.get_int(
+            'ACCEL_ORDER', params, self.accel_order, minval=2, maxval=6)
+        if accel_order != self.accel_order:
+            self.accel_order = accel_order
+            self.kin.setup_accel_order(accel_order)
+            self.extruder.setup_accel_order(accel_order)
         self.max_velocity = max_velocity
         self.max_accel = max_accel
         self.max_accel_to_decel = min(self.requested_accel_to_decel, max_accel)
         self.junction_deviation = junction_deviation
-        msg = ("max_velocity: %.6f\n"
-               "max_accel: %.6f\n"
-               "max_accel_to_decel: %.6f\n"
-               "junction_deviation: %.6f"% (
-                   max_velocity, max_accel, self.requested_accel_to_decel,
-                   junction_deviation))
+        msg = ("max_velocity: %.6f max_accel: %.6f accel_order: %d\n"
+               "max_accel_to_decel: %.6f junction_deviation: %.6f"% (
+                   max_velocity, max_accel, accel_order,
+                   self.requested_accel_to_decel, junction_deviation))
         self.printer.set_rollover_info("toolhead", "toolhead: %s" % (msg,))
         gcode.respond_info(msg)
     def cmd_M204(self, params):
